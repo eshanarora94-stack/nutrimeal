@@ -1,0 +1,161 @@
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Ingredient {
+  id          String             @id
+  name        String
+  category    String?
+  nutrients   Json
+  lastFetched DateTime
+  usedIn      RecipeIngredient[]
+  pantryItems PantryItem[]
+}
+
+model Recipe {
+  id                 String             @id @default(uuid())
+  name               String
+  source             String
+  instructions       String
+  prepMins           Int
+  cookMins           Int
+  servings           Int
+  category           String?
+  imageUrl           String?
+  notes              String?
+  tags               Json?
+  difficulty         String?
+  isFavorite         Boolean            @default(false)
+  timesCooked        Int                @default(0)
+  lastCookedAt       DateTime?
+  totalCookedWeightG Float?
+  nutritionScore     Float?
+  createdAt          DateTime           @default(now())
+  ingredients        RecipeIngredient[]
+  source_record      RecipeSource?
+  mealPlans          MealPlan[]
+}
+
+model RecipeIngredient {
+  id           String     @id @default(uuid())
+  recipeId     String
+  ingredientId String
+  amount       Float
+  unit         String
+  amountGrams  Float?
+  displayText  String?
+  recipe       Recipe     @relation(fields: [recipeId], references: [id])
+  ingredient   Ingredient @relation(fields: [ingredientId], references: [id])
+}
+
+model RecipeSource {
+  id         String   @id @default(uuid())
+  recipeId   String   @unique
+  provider   String
+  externalId String?
+  sourceUrl  String?
+  importedAt DateTime @default(now())
+  recipe     Recipe   @relation(fields: [recipeId], references: [id])
+}
+
+model MealPlan {
+  id       String                     @id @default(uuid())
+  date     DateTime
+  mealType String
+  recipeId String
+  servings Float
+  recipe   Recipe                     @relation(fields: [recipeId], references: [id])
+  snapshot MealPlanNutritionSnapshot?
+}
+
+model MealPlanNutritionSnapshot {
+  id            String   @id @default(uuid())
+  mealPlanId    String   @unique
+  calories      Float?
+  proteinG      Float?
+  carbsG        Float?
+  fatG          Float?
+  fiberG        Float?
+  sodiumMg      Float?
+  fullNutrients Json
+  calculatedAt  DateTime @default(now())
+  mealPlan      MealPlan @relation(fields: [mealPlanId], references: [id])
+}
+
+model NutritionGoal {
+  id          String   @id @default(uuid())
+  calories    Int
+  proteinG    Float
+  carbsG      Float
+  fatG        Float
+  fiberG      Float?
+  sodiumMg    Float?
+  customGoals Json?
+  updatedAt   DateTime @updatedAt
+}
+
+model NutrientReference {
+  id                   String    @id @default(uuid())
+  nutrientId           String
+  nutrientNumber       String?
+  nutrientName         String
+  canonicalName        String
+  aliases              Json?
+  unitName             String
+  defaultTarget        Float?
+  defaultUpperLimit    Float?
+  limitType            String
+  category             String
+  source               String
+  sourceDatasetVersion String?
+  verifiedAt           DateTime?
+  notes                String?
+}
+
+model PantryItem {
+  id           String      @id @default(uuid())
+  ingredientId String?
+  name         String
+  amount       Float?
+  unit         String?
+  amountGrams  Float?
+  category     String?
+  expiresAt    DateTime?
+  notes        String?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  ingredient   Ingredient? @relation(fields: [ingredientId], references: [id])
+}
+
+model GroceryListItem {
+  id                   String   @id @default(uuid())
+  weekStartDate        DateTime
+  ingredientName       String
+  ingredientId         String?
+  category             String?
+  totalAmount          Float?
+  totalUnit            String?
+  totalGrams           Float?
+  displayText          String
+  isChecked            Boolean  @default(false)
+  fromPantry           Boolean  @default(false)
+  sourceRecipeIds      Json?
+  coveredByPantryGrams Float?
+  remainingToBuyGrams  Float?
+}
+
+model IngredientDensity {
+  id                 String  @id @default(uuid())
+  ingredientName     String
+  gramsPerCup        Float?
+  gramsPerTablespoon Float?
+  gramsPerTeaspoon   Float?
+  gramsPerPiece      Float?
+  gramsPerMl         Float?
+  notes              String?
+  source             String
+}
